@@ -6,7 +6,8 @@ __pycache__/
 result_karman.csv
 model/
 pinn_env/
-
+model_parametric/
+test_*
 # C extensions
 *.so
 
