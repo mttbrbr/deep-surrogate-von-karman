@@ -1,0 +1,4 @@
+numpy
+matplotlib
+deepxde
+# Note: torch must be installed separately to support ROCm

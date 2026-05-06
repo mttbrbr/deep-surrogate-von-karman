@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+result_karman.csv
+model/
+pinn_env/
+
 # C extensions
 *.so
 
