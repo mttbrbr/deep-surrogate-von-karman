@@ -81,7 +81,7 @@ ic_v = dde.icbc.IC(geomtime, lambda x: 0.0, lambda _, on_initial: on_initial, co
 data = dde.data.TimePDE(
     geomtime, navier_stokes,
     [bc_u_in, bc_v_in, bc_u_cyl, bc_v_cyl, bc_p_out, ic_u, ic_v],
-    num_domain=30000, num_boundary=5000, num_initial=5000
+    num_domain=50000, num_boundary=5000, num_initial=5000
 )
 
 # Funzione per aggiungere la colonna di Re ai punti campionati
@@ -107,13 +107,13 @@ checkpointer = dde.callbacks.ModelCheckpoint(
 
 # Pesi per forzare la rete a rispettare di più il cilindro e la continuità
 # Ordine: [Cont, MomU, MomV, InletU, InletV, CylU, CylV, OutP, ICU, ICV]
-loss_weights = [2, 1, 1, 5, 5, 10, 10, 1, 2, 2]
+loss_weights = [20, 10, 10, 5, 5, 100, 100, 2, 5, 5]
 
 print(f"\n--- INIZIO TRAINING SU: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU'} ---")
 
 # Fase 1: Adam (Sgrossatura)
 model.compile("adam", lr=1e-3, loss_weights=loss_weights)
-losshistory, train_state = model.train(iterations=30000, callbacks=[checkpointer])
+losshistory, train_state = model.train(iterations=100000, callbacks=[checkpointer])
 
 # Fase 2: L-BFGS (Rifinitura di precisione)
 model.compile("L-BFGS", loss_weights=loss_weights)
