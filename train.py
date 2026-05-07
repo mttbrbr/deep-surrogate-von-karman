@@ -97,7 +97,7 @@ data.test_x = inject_re(data.test_x)
 
 # --- 5. RETE NEURALE E TRAINING ---
 # Rete con 4 input -> 6 layer da 128 -> 3 output
-net = dde.nn.FNN([4] + [128] * 6 + [3], "tanh", "Glorot normal")
+net = dde.nn.FNN([4] + [128] * 6 + [3], "sin", "Glorot normal")
 model = dde.Model(data, net)
 
 # Callback per i salvataggi
