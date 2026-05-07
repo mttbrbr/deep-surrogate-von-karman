@@ -113,7 +113,49 @@ print(f"\n--- INIZIO TRAINING SU: {torch.cuda.get_device_name(0) if torch.cuda.i
 
 # Fase 1: Adam (Sgrossatura)
 model.compile("adam", lr=1e-3, loss_weights=loss_weights)
-losshistory, train_state = model.train(iterations=100000, callbacks=[checkpointer])
+
+print("\n--- INIZIO FASE 1: ADAM CON CAMPIONAMENTO ADATTIVO (RAR) ---")
+model.compile("adam", lr=1e-3, loss_weights=loss_weights)
+
+cicli_rar = 4
+iterazioni_per_ciclo = 25000 # Totale: 100.000 iterazioni divise in 4 step
+
+for i in range(cicli_rar):
+    print(f"\n--- Ciclo RAR {i+1}/{cicli_rar} ---")
+    losshistory, train_state = model.train(iterations=iterazioni_per_ciclo, callbacks=[checkpointer])
+    
+    # --- LOGICA DEL CAMPIONAMENTO ADATTIVO ---
+    if i < cicli_rar - 1: # Non serve aggiungere punti all'ultimo ciclo
+        print("Valutazione dei residui fisici per il campionamento adattivo...")
+        
+        # 1. Generiamo 50.000 nuovi punti casuali nel dominio spazio-temporale
+        X_random = geomtime.random_points(50000)
+        # Usiamo la tua funzione per iniettare il Reynolds in modo corretto
+        X_random = inject_re(X_random)
+        
+        # 2. Chiediamo al modello di prevedere i residui di Navier-Stokes su questi nuovi punti
+        # DeepXDE restituisce una lista [continuity, mom_u, mom_v]
+        residui = model.predict(X_random, operator=navier_stokes)
+        
+        # 3. Sommiamo gli errori assoluti delle equazioni per ogni punto
+        errore_totale = np.abs(residui[0]) + np.abs(residui[1]) + np.abs(residui[2])
+        errore_totale = errore_totale.flatten()
+        
+        # 4. Troviamo gli indici dei 1000 punti con l'errore più estremo
+        top_k_indices = np.argsort(errore_totale)[-1000:]
+        nuovi_punti_difficili = X_random[top_k_indices]
+        
+        print(f"Aggiunti {len(nuovi_punti_difficili)} nuovi punti di collocazione nelle zone critiche.")
+        
+        # 5. Aggiungiamo i punti al dataset e ricompiliamo il modello per farglieli vedere
+        data.add_anchors(nuovi_punti_difficili)
+        model.compile("adam", lr=1e-3, loss_weights=loss_weights)
+
+
+print("\n--- INIZIO FASE 2: L-BFGS ")
+# La Fase 2 L-BFGS rimane identica, lavorerà sul dataset espanso!
+model.compile("L-BFGS", loss_weights=loss_weights)
+losshistory, train_state = model.train()
 
 # Fase 2: L-BFGS (Rifinitura di precisione)
 model.compile("L-BFGS", loss_weights=loss_weights)
