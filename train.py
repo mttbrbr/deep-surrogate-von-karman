@@ -81,7 +81,7 @@ ic_v = dde.icbc.IC(geomtime, lambda x: 0.0, lambda _, on_initial: on_initial, co
 data = dde.data.TimePDE(
     geomtime, navier_stokes,
     [bc_u_in, bc_v_in, bc_u_cyl, bc_v_cyl, bc_p_out, ic_u, ic_v],
-    num_domain=50000, num_boundary=5000, num_initial=5000
+    num_domain=60000, num_boundary=8000, num_initial=8000
 )
 
 # Funzione per aggiungere la colonna di Re ai punti campionati
@@ -129,7 +129,7 @@ for i in range(cicli_rar):
         print("Valutazione dei residui fisici per il campionamento adattivo...")
         
         # 1. Generiamo 50.000 nuovi punti casuali nel dominio spazio-temporale
-        X_random = geomtime.random_points(50000)
+        X_random = geomtime.random_points(100000)
         # Usiamo la tua funzione per iniettare il Reynolds in modo corretto
         X_random = inject_re(X_random)
         
@@ -142,7 +142,7 @@ for i in range(cicli_rar):
         errore_totale = errore_totale.flatten()
         
         # 4. Troviamo gli indici dei 1000 punti con l'errore più estremo
-        top_k_indices = np.argsort(errore_totale)[-1000:]
+        top_k_indices = np.argsort(errore_totale)[-2000:]
         nuovi_punti_difficili = X_random[top_k_indices]
         
         print(f"Aggiunti {len(nuovi_punti_difficili)} nuovi punti di collocazione nelle zone critiche.")
